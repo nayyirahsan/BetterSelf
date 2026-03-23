@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Best Self">
+<title>Best Self</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #080810;
+    --card: #0f0f1c;
+    --card2: #13131f;
+    --border: #1c1c32;
+    --text: #e8e8f2;
+    --muted: #32324e;
+    --muted2: #55557a;
+    --accent: #f97316;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  /* ── TOP SAFE AREA ── */
+  .safe-top { height: var(--safe-top); background: var(--bg); flex-shrink: 0; }
+
+  /* ── HEADER ── */
+  .header {
+    flex-shrink: 0;
+    padding: 14px 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .greeting { font-size: 9px; color: var(--muted2); letter-spacing: 0.18em; margin-bottom: 2px; }
+
+  .title {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+
+  /* ── RING ── */
+  .ring-wrap { position: relative; width: 68px; height: 68px; flex-shrink: 0; }
+  .ring-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-pct { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; line-height: 1; }
+  .ring-sub { font-size: 8px; color: var(--muted2); margin-top: 1px; }
+
+  /* ── DATE STRIP ── */
+  .date-strip {
+    flex-shrink: 0;
+    display: flex;
+    gap: 5px;
+    padding: 0 20px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .date-strip::-webkit-scrollbar { display: none; }
+
+  .date-pill {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 7px 9px 6px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    min-width: 42px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+  }
+
+  .date-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .date-pill.active .dp-day,
+  .date-pill.active .dp-num { color: #000; }
+
+  .dp-day { font-size: 8px; color: var(--muted2); letter-spacing: 0.08em; margin-bottom: 2px; }
+  .dp-num { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+
+  .dp-bar {
+    width: 28px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .dp-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .date-pill.active .dp-bar { background: #00000033; }
+  .date-pill.active .dp-bar-fill { background: #000; }
+
+  /* ── SCROLL AREA ── */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 20px 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* ── HABIT ROWS ── */
+  .habit-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 14px;
+    border-radius: 14px;
+    margin-bottom: 7px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .habit-row:active { transform: scale(0.975); }
+
+  .habit-icon { font-size: 21px; margin-right: 13px; flex-shrink: 0; }
+
+  .habit-info { flex: 1; min-width: 0; }
+
+  .habit-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    transition: color 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .habit-streak-text {
+    font-size: 9px;
+    color: var(--muted2);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+    transition: color 0.2s ease;
+  }
+
+  .habit-check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .check-svg {
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .habit-row.done .check-svg { opacity: 1; transform: scale(1); }
+
+  /* ── STREAKS PAGE ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+  }
+
+  .stat-label { font-size: 8px; color: var(--muted2); letter-spacing: 0.14em; margin-bottom: 5px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; }
+  .stat-sub { font-size: 8px; color: var(--muted); margin-top: 3px; }
+
+  .streak-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 6px;
+    gap: 11px;
+  }
+
+  .streak-icon { font-size: 18px; flex-shrink: 0; }
+
+  .streak-info { flex: 1; min-width: 0; }
+  .streak-name { font-size: 11px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .streak-bar-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .streak-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+  .streak-meta { font-size: 8px; color: var(--muted); margin-top: 3px; }
+
+  .streak-num {
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 28px;
+  }
+  .streak-count { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; }
+  .streak-badge { font-size: 11px; text-align: center; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    flex-shrink: 0;
+    display: flex;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    gap: 4px;
+  }
+
+  .nav-btn:active { opacity: 0.6; }
+
+  .nav-icon { font-size: 20px; line-height: 1; }
+
+  .nav-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: var(--muted2);
+    transition: color 0.2s ease;
+  }
+
+  .nav-btn.active .nav-label { color: var(--accent); }
+
+  .nav-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 0.2s ease;
+    margin-top: 1px;
+  }
+  .nav-btn.active .nav-indicator { background: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .habit-row { animation: fadeUp 0.25s ease both; }
+
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.035); }
+    100% { transform: scale(1); }
+  }
+  .habit-row.popping { animation: pop 0.25s ease; }
+</style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="greeting" id="greeting">GOOD MORNING</div>
+    <div class="title">BEST SELF</div>
+  </div>
+  <div class="ring-wrap">
+    <svg width="68" height="68" viewBox="0 0 68 68">
+      <circle cx="34" cy="34" r="28" fill="none" stroke="#1c1c32" stroke-width="5.5"/>
+      <circle id="ringArc" cx="34" cy="34" r="28" fill="none" stroke="#f97316"
+        stroke-width="5.5" stroke-linecap="round"
+        stroke-dasharray="175.9" stroke-dashoffset="175.9"
+        transform="rotate(-90 34 34)"
+        style="transition:stroke-dashoffset 0.55s ease,stroke 0.3s ease"/>
+    </svg>
+    <div class="ring-inner">
+      <div class="ring-pct" id="ringPct">0%</div>
+      <div class="ring-sub" id="ringSub">0/10</div>
+    </div>
+  </div>
+</div>
+
+<!-- DATE STRIP (only on TODAY tab) -->
+<div class="date-strip" id="dateStrip"></div>
+
+<!-- SCROLL AREA -->
+<div class="scroll-area" id="scrollArea"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-today" onclick="setPage('today')">
+    <div class="nav-icon">☀️</div>
+    <div class="nav-label">TODAY</div>
+    <div class="nav-indicator"></div>
+  </button>
+  <button class="nav-btn" id="nav-streaks" onclick="setPage('streaks')">
+    <div class="nav-icon">🔥</div>
+    <div class="nav-label">STREAKS</div>
+    <div class="nav-indicator"></div>
+  </button>
+</div>
+
+<script>
+const HABITS = [
+  { id:"steps",       label:"15k Steps",         icon:"👟", color:"#f97316" },
+  { id:"water",       label:"Drink Water",        icon:"💧", color:"#38bdf8" },
+  { id:"protein",     label:"Eat Protein",        icon:"🥩", color:"#a3e635" },
+  { id:"gym",         label:"Gym & Pull-ups",     icon:"🏋️", color:"#fb7185" },
+  { id:"mobility",    label:"Mobility & Stretch", icon:"🧘", color:"#34d399" },
+  { id:"sleep",       label:"8hrs Sleep",         icon:"🌙", color:"#818cf8" },
+  { id:"socialmedia", label:"Limit Social Media", icon:"📵", color:"#fbbf24" },
+  { id:"leetcode",    label:"LeetCode",           icon:"💻", color:"#f472b6" },
+  { id:"projects",    label:"Work on Projects",   icon:"🛠️", color:"#2dd4bf" },
+  { id:"fruits",      label:"Fruits & Veggies",   icon:"🥦", color:"#86efac" },
+];
+
+const KEY = "bestself_v3";
+let data = {};
+let activePage = "today";
+let activeDate = todayKey();
+
+try { const s = localStorage.getItem(KEY); if (s) data = JSON.parse(s); } catch {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} }
+
+function todayKey() { return new Date().toISOString().split("T")[0]; }
+
+function getStreak(id) {
+  let streak = 0, d = new Date();
+  if (!data[todayKey()]?.[id]) d.setDate(d.getDate() - 1);
+  while (streak < 366) {
+    const k = d.toISOString().split("T")[0];
+    if (data[k]?.[id]) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function getBest(id) {
+  let best = 0, cur = 0;
+  for (const k of Object.keys(data).sort()) {
+    if (data[k]?.[id]) { cur++; best = Math.max(best, cur); }
+    else cur = 0;
+  }
+  return best;
+}
+
+function getTotal(id) {
+  return Object.values(data).filter(d => d?.[id]).length;
+}
+
+function toggle(id) {
+  if (!data[activeDate]) data[activeDate] = {};
+  data[activeDate][id] = !data[activeDate][id];
+  save();
+  renderToday();
+  buildDateStrip();
+  // pop
+  const el = document.getElementById('h-' + id);
+  if (el) { el.classList.add('popping'); setTimeout(() => el.classList.remove('popping'), 250); }
+}
+
+/* ── DATE STRIP ── */
+function buildDateStrip() {
+  const strip = document.getElementById('dateStrip');
+  const show = activePage === 'today';
+  strip.style.display = show ? 'flex' : 'none';
+  if (!show) return;
+
+  strip.innerHTML = '';
+  const DAY = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const k = d.toISOString().split("T")[0];
+    const isActive = k === activeDate;
+    const done = HABITS.filter(h => data[k]?.[h.id]).length;
+    const pct = Math.round(done / HABITS.length * 100);
+
+    const el = document.createElement('div');
+    el.className = 'date-pill' + (isActive ? ' active' : '');
+    el.innerHTML = `
+      <div class="dp-day">${DAY[d.getDay()]}</div>
+      <div class="dp-num">${d.getDate()}</div>
+      <div class="dp-bar"><div class="dp-bar-fill" style="width:${pct}%"></div></div>
+    `;
+    el.onclick = () => { activeDate = k; buildDateStrip(); renderToday(); };
+    strip.appendChild(el);
+  }
+}
+
+/* ── RING ── */
+function updateRing() {
+  const done = HABITS.filter(h => data[activeDate]?.[h.id]).length;
+  const pct = Math.round(done / HABITS.length * 100);
+  const circ = 175.9;
+  document.getElementById('ringArc').style.strokeDashoffset = circ - (pct / 100) * circ;
+  document.getElementById('ringArc').style.stroke = pct === 100 ? '#4ade80' : '#f97316';
+  document.getElementById('ringPct').textContent = pct + '%';
+  document.getElementById('ringSub').textContent = done + '/10';
+}
+
+/* ── TODAY PAGE ── */
+function renderToday() {
+  updateRing();
+  const area = document.getElementById('scrollArea');
+
+  const rows = HABITS.map((h, i) => {
+    const done = !!(data[activeDate]?.[h.id]);
+    const streak = getStreak(h.id);
+    const streakTxt = streak > 0 ? `🔥 ${streak} day streak` : '—';
+    return `
+      <div class="habit-row ${done ? 'done' : ''}" id="h-${h.id}"
+        onclick="toggle('${h.id}')"
+        style="${done ? `background:${h.color}15;border-color:${h.color}45;` : ''}animation-delay:${i*0.03}s">
+        <div class="habit-icon">${h.icon}</div>
+        <div class="habit-info">
+          <div class="habit-name" style="${done ? `color:${h.color}` : ''}">${h.label}</div>
+          <div class="habit-streak-text" style="${done && streak > 0 ? `color:${h.color}80` : ''}">${streakTxt}</div>
+        </div>
+        <div class="habit-check" style="${done ? `background:${h.color};border-color:${h.color}` : ''}">
+          <svg class="check-svg" width="12" height="9" viewBox="0 0 12 9" fill="none">
+            <path d="M1 4l3.5 3.5L11 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>`;
+  }).join('');
+
+  area.innerHTML = rows + '<div style="height:16px"></div>';
+}
+
+/* ── STREAKS PAGE ── */
+function renderStreaks() {
+  const area = document.getElementById('scrollArea');
+  const allKeys = Object.keys(data);
+  const totalDays  = allKeys.filter(k => HABITS.some(h => data[k]?.[h.id])).length;
+  const perfect    = allKeys.filter(k => HABITS.every(h => data[k]?.[h.id])).length;
+  const totalChecks = allKeys.reduce((s, k) => s + HABITS.filter(h => data[k]?.[h.id]).length, 0);
+  const topStreak  = Math.max(0, ...HABITS.map(h => getBest(h.id)));
+  const maxCur     = Math.max(1, ...HABITS.map(h => getStreak(h.id)));
+
+  const streakRows = HABITS.map(h => {
+    const cur   = getStreak(h.id);
+    const best  = getBest(h.id);
+    const total = getTotal(h.id);
+    const barW  = Math.round((cur / Math.max(maxCur, 7)) * 100);
+    const badge = cur >= 7 ? '🔥' : cur >= 3 ? '✨' : cur > 0 ? '⚡' : '';
+    return `
+      <div class="streak-row">
+        <div class="streak-icon">${h.icon}</div>
+        <div class="streak-info">
+          <div class="streak-name">${h.label}</div>
+          <div class="streak-bar-track">
+            <div class="streak-bar-fill" style="width:${barW}%;background:${h.color}"></div>
+          </div>
+          <div class="streak-meta">best ${best} · total ${total}</div>
+        </div>
+        <div class="streak-num">
+          <div class="streak-count" style="color:${cur > 0 ? h.color : 'var(--muted)'}">${cur}</div>
+          <div class="streak-badge">${badge}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">ACTIVE DAYS</div>
+        <div class="stat-value" style="color:#f97316">${totalDays}</div>
+        <div class="stat-sub">days logged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">PERFECT DAYS</div>
+        <div class="stat-value" style="color:#4ade80">${perfect}</div>
+        <div class="stat-sub">all 10 done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TOTAL DONE</div>
+        <div class="stat-value" style="color:#818cf8">${totalChecks}</div>
+        <div class="stat-sub">check-ins</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">BEST STREAK</div>
+        <div class="stat-value" style="color:#fbbf24">${topStreak}</div>
+        <div class="stat-sub">days in a row</div>
+      </div>
+    </div>
+    ${streakRows}
+    <div style="height:16px"></div>
+  `;
+}
+
+/* ── PAGE SWITCHING ── */
+function setPage(page) {
+  activePage = page;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + page).classList.add('active');
+  buildDateStrip();
+  if (page === 'today') renderToday();
+  else renderStreaks();
+}
+
+/* ── INIT ── */
+function setGreeting() {
+  const h = new Date().getHours();
+  document.getElementById('greeting').textContent =
+    h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+}
+
+setGreeting();
+buildDateStrip();
+renderToday();
+</script>
+</body>
+</html>
